@@ -41,7 +41,7 @@ module.exports = class DeepTruth
 		}
 
 		this.userQuery = userQuery;
-		this.currentOutput = `# ${this.userQuery}\n\n ## References\n\n`;
+		this.currentOutput = `# ${this.userQuery}\n\n`;
 		this.processedArticles = 0;
 		this.totalArticles = 0;
 		this.outputDir = outputDir; // Store output directory
@@ -177,33 +177,31 @@ module.exports = class DeepTruth
 	buildPrompt ( metadata, content )
 	{
 		return `
-You are Deep Truth, a system designed to find and present **verifiable facts** using **only exact quotes** from the given text. Your job is to analyze the provided text and update the synthesis based on the user query.
+You are a system designed to find and add **facts** using **only exact quotes** from the given text. Your job is to analyze the provided text and complete the synthesis based on the user query.
 
-### **User Query**: 
+**User Query**: 
 "${this.userQuery}"
 
-### **Text Metadata**:
+**Text Metadata**:
 ${Object.entries( metadata ).map( ( [key, value] ) => { return `${key}: ${value || "N/A"}`; }).join( "\n" )}
 
-### **Text Content**:
+**Text Content**:
 <text>
 ${content}
 </text>
 
-### **Current Synthesis**:
+**Current Synthesis**:
 <synthesis>
 ${this.currentOutput}
 </synthesis>
 
-### **Task Instructions**:
-- **Only use exact phrases from the text.** Do not paraphrase or add information that is not in the text.
-- **Integrate quotes smoothly** to form a coherent article.
-- **Cite sources** using numbered references corresponding to the text URLs.
-- **Do not add your own words.** Just structure the found truths clearly.
-- If **no relevant information** is found, return exactly: <output>No relevant information found.</output>
+**Task Instructions**:
+- **Only use exact phrases from the text.**.
+- **Integrate quotes smoothly** to the current synthesis to form a complete coherent article.
+- **Do not add your own words.**.
 - Your response must be fully enclosed in:
 <output>
-{your updated synthesis here}
+the updated synthesis here
 </output>
 `;
 	}
@@ -220,7 +218,9 @@ ${this.currentOutput}
 				/\[output\]([\s\S]*?)\[\/output\]/,
 				/<synthesis>([\s\S]*?)<\/synthesis>/,
 				/<synthesis>([\s\S]*?)\[\/synthesis\]/,
-				/\[synthesis\]([\s\S]*?)\[\/synthesis\]/
+				/\[synthesis\]([\s\S]*?)\[\/synthesis\]/,
+				/<output>\n([\s\S]*?)<\/synthesis>/,
+				/<output>\n([\s\S]*?)\[\/synthesis\]/,
 			];
 
 			for ( const regex of outputRegexes )

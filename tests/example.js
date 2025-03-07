@@ -2,7 +2,7 @@ const fs = require( "fs" );
 const DeepTruth = require( "../main" );
 
 const data = fs.readFileSync( "./dataset/khamenei-ir-free-palestine-tag/train_with_metadata.json", "utf8" );
-const jsonArray = data
+const khameneiIr = data
 .split( "\n" )
 .filter( line => { return line.trim().length > 0 })
 .map( line => { return JSON.parse( line ) });
@@ -29,7 +29,7 @@ void async function main ()
 		outputDir: "./outputs",
 		modelProvider: "gemini"
 	});
-	const result = await deepTruth.processArticles( articles, {
+	const result = await deepTruth.processArticles( khameneiIr, {
 		factCheckLevel: "high",
 		outputFormat: "markdown"
 	});
