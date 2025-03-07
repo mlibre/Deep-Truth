@@ -29,10 +29,7 @@ void async function main ()
 		outputDir: "./outputs",
 		// modelProvider: "gemini"
 	});
-	const result = await deepTruth.processArticles( khameneiIr, {
-		factCheckLevel: "high",
-		outputFormat: "markdown"
-	});
+	const result = await deepTruth.processArticles( khameneiIr );
 
 	console.log( "\nFINAL SYNTHESIS:" );
 	console.log( result );
