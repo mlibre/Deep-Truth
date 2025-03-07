@@ -41,7 +41,7 @@ module.exports = class DeepTruth
 		}
 
 		this.userQuery = userQuery;
-		this.currentOutput = "";
+		this.currentOutput = `# ${this.userQuery}\n\n ## References\n\n`;
 		this.processedArticles = 0;
 		this.totalArticles = 0;
 		this.outputDir = outputDir; // Store output directory
@@ -210,22 +210,43 @@ ${this.currentOutput}
 
 	extractOutputFromResponse ( response )
 	{
-		const outputRegexes = [
-			/<output>([\s\S]*?)<\/output>/,
-			/<output>([\s\S]*?)\[\/output\]/,
-			/\[output\]([\s\S]*?)\[\/output\]/
-		];
+		let output = response.trim();
 
-		for ( const regex of outputRegexes )
+		while ( true )
 		{
-			const match = response.match( regex );
-			if ( match && match[1] )
+			let matchFound = false;
+			const outputRegexes = [
+				/<output>([\s\S]*?)<\/output>/,
+				/<output>([\s\S]*?)\[\/output\]/,
+				/\[output\]([\s\S]*?)\[\/output\]/,
+				/<synthesis>([\s\S]*?)<\/synthesis>/,
+				/<synthesis>([\s\S]*?)\[\/synthesis\]/,
+				/\[synthesis\]([\s\S]*?)\[\/synthesis\]/
+			];
+
+			for ( const regex of outputRegexes )
 			{
-				return match[1].trim();
+				const match = output.match( regex );
+				if ( match && match[1] )
+				{
+					output = match[1].trim();
+					matchFound = true;
+					break;
+				}
+			}
+
+			if ( !matchFound )
+			{
+				break;
 			}
 		}
 
-		console.warn( "Warning: No output tags found in response. Using full response." );
-		return response.trim();
+
+		if ( output === response.trim() )
+		{
+			console.warn( "Warning: No output or synthesis tags found in response. Using full response." );
+		}
+
+		return output;
 	}
 }
