@@ -211,7 +211,6 @@ ${this.currentOutput}
 	extractOutputFromResponse ( response )
 	{
 		let output = response.trim();
-
 		while ( true )
 		{
 			let matchFound = false;
@@ -240,13 +239,10 @@ ${this.currentOutput}
 				break;
 			}
 		}
-
-
 		if ( output === response.trim() )
 		{
 			console.warn( "Warning: No output or synthesis tags found in response. Using full response." );
 		}
-
 		return output;
 	}
 }
