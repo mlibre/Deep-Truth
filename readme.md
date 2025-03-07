@@ -64,7 +64,7 @@ export GOOGLE_API_KEY=your_google_api_key_here
 Here's a quick example to get you started:
 
 ```js
-const DeepTruth = require('./DeepTruth');
+const DeepTruth = require('deep-truth');
 
 (async () => {
  const deepTruth = new DeepTruth({
