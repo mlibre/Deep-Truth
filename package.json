@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "main": "main.js",
   "scripts": {
-    "start": "node main.js"
+    "start": "node main.js",
+    "test": "node --env-file=.env tests/example.js"
   },
   "keywords": [
     "ai",
@@ -18,6 +19,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@google/generative-ai": "^0.24.0",
     "clean-web-scraper": "^4.2.0",
     "eslint": "^9.21.0",
     "ollama": "^0.5.14"

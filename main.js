@@ -1,4 +1,5 @@
 const { Ollama } = require( "ollama" )
+const { GoogleGenerativeAI } = require( "@google/generative-ai" )
 const fs = require( "fs" );
 const path = require( "path" )
 
@@ -6,6 +7,7 @@ module.exports = class DeepTruth
 {
 	constructor ({
 		userQuery,
+		modelProvider = "ollama",
 		ollamaHost = "http://127.0.0.1:11434",
 		ollamaOptions = {
 			model: "llama3.2", // llama3.2, deepseek-r1:8b
@@ -15,11 +17,29 @@ module.exports = class DeepTruth
 				num_predict: 5500
 			}
 		},
+		geminiOptions = {
+			model: "gemini-2.0-flash",
+			apiKey: process.env.GOOGLE_API_KEY
+		},
 		outputDir = "./outputs"
 	})
 	{
-		this.ollama = new Ollama({ host: ollamaHost })
-		this.ollamaOptions = ollamaOptions;
+	   this.modelProvider = modelProvider;
+
+		        // Initialize Ollama if selected
+		if ( modelProvider === "ollama" )
+		{
+			this.ollama = new Ollama({ host: ollamaHost })
+			this.ollamaOptions = ollamaOptions;
+		}
+
+		// Initialize Gemini if selected
+		if ( modelProvider === "gemini" )
+		{
+			this.genAI = new GoogleGenerativeAI( geminiOptions.apiKey );
+			this.model = this.genAI.getGenerativeModel({ model: geminiOptions.model });
+		}
+
 		this.userQuery = userQuery;
 		this.currentOutput = "";
 		this.processedArticles = 0;
@@ -38,11 +58,6 @@ module.exports = class DeepTruth
 		fs.mkdirSync( this.outputDir, { recursive: true });
 	}
 
-	/**
-	* Process an array of article objects to extract meaningful insights
-	* @param {Array} articles - Array of article objects
-	* @returns {Promise<string>} The synthesized output
-	*/
 	async processArticles ( articles )
 	{
 		try
@@ -91,52 +106,19 @@ module.exports = class DeepTruth
 		}
 	}
 
-	/**
-	* Process a single article and update the current synthesis
-	* @param {Object} article - The article object
-	*/
 	async processArticle ( article )
 	{
 		try
 		{
-			const { text: content, metadata } = article;
+			const { text, metadata } = article;
 
-			if ( !content || typeof content !== "string" )
+			if ( !text || typeof text !== "string" )
 			{
 				console.warn( `Skipping article with missing or invalid content: ${title || "Untitled"}` );
 				return;
 			}
 
-			const prompt = `
-You are Deep Truth, a system designed to find and present **verifiable facts** using **only exact quotes** from the given text. Your job is to analyze the provided text and update the synthesis based on the user query.
-
-### **User Query**: 
-"${this.userQuery}"
-
-### **Text Metadata**:
-${Object.entries( metadata ).map( ( [key, value] ) => { return `${key}: ${value || "N/A"}` }).join( "\n" )}
-
-### **Text Content**:
-[text begin]
-${content}
-[text end]
-
-### **Current Synthesis**:
-[synthesis begin]
-${this.currentOutput}
-[synthesis end]
-
-### **Task Instructions**:
-- **Only use exact phrases from the text.** Do not paraphrase or add information that is not in the text.
-- **Integrate quotes smoothly** to form a coherent article.
-- **Cite sources** using numbered references like [1], [2] corresponding to the article URLs.
-- **Do not add your own words.** Just structure the found truths clearly.
-- If **no relevant information** is found, return exactly: <output>No relevant information found.</output>
-- Your response must be fully enclosed in:
-<output>
-{your updated synthesis here}
-</output>
-`;
+			const prompt = this.buildPrompt( metadata, text );
 
 			const response = await this.getModelResponse( prompt );
 			const extractedOutput = this.extractOutputFromResponse( response );
@@ -150,6 +132,80 @@ ${this.currentOutput}
 		{
 			console.error( `Error processing article: ${error.message}` );
 		}
+	}
+
+	async getModelResponse ( prompt )
+	{
+		try
+		{
+			let aiResponse = "";
+
+			if ( this.modelProvider === "ollama" )
+			{
+				const response = await this.ollama.generate({
+					...this.ollamaOptions,
+					prompt
+				});
+
+				for await ( const part of response )
+				{
+					console.log( part.response );
+					aiResponse += part.response;
+				}
+			}
+			else if ( this.modelProvider === "gemini" )
+			{
+				const result = await this.model.generateContentStream( prompt );
+
+				for await ( const chunk of result.stream )
+				{
+					const chunkText = chunk.text();
+					console.log( chunkText );
+					aiResponse += chunkText;
+				}
+			}
+
+			return aiResponse.trim();
+		}
+		catch ( error )
+		{
+			console.error( "Error getting model response:", error );
+			throw error;
+		}
+	}
+
+	buildPrompt ( metadata, content )
+	{
+		return `
+You are Deep Truth, a system designed to find and present **verifiable facts** using **only exact quotes** from the given text. Your job is to analyze the provided text and update the synthesis based on the user query.
+
+### **User Query**: 
+"${this.userQuery}"
+
+### **Text Metadata**:
+${Object.entries( metadata ).map( ( [key, value] ) => { return `${key}: ${value || "N/A"}`; }).join( "\n" )}
+
+### **Text Content**:
+<text>
+${content}
+</text>
+
+### **Current Synthesis**:
+<synthesis>
+${this.currentOutput}
+</synthesis>
+
+### **Task Instructions**:
+- **Only use exact phrases from the text.** Do not paraphrase or add information that is not in the text.
+- **Integrate quotes smoothly** to form a coherent article.
+- **Cite sources** using numbered references corresponding to the text URLs.
+- **Do not add your own words.** Just structure the found truths clearly.
+- If **no relevant information** is found, return exactly: <output>No relevant information found.</output>
+- Your response must be fully enclosed in:
+<output>
+{your updated synthesis here}
+</output>
+`;
 	}
 
 	extractOutputFromResponse ( response )
@@ -171,30 +227,5 @@ ${this.currentOutput}
 
 		console.warn( "Warning: No output tags found in response. Using full response." );
 		return response.trim();
-	}
-
-	async getModelResponse ( prompt )
-	{
-		try
-		{
-			const response = await this.ollama.generate({
-				...this.ollamaOptions,
-				prompt
-			});
-
-			let aiResponse = "";
-			for await ( const part of response )
-			{
-				console.log( part.response );
-				aiResponse += part.response;
-			}
-
-			return aiResponse.trim();
-		}
-		catch ( error )
-		{
-			console.error( "Error getting model response:", error );
-			throw error;
-		}
 	}
 }
