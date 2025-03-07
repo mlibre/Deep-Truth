@@ -177,7 +177,7 @@ module.exports = class DeepTruth
 	buildPrompt ( metadata, content )
 	{
 		return `
-You are a system designed to find and add **facts** using **only exact quotes** from the given text. Your job is to analyze the provided text and complete the synthesis based on the user query.
+You are a system designed to find **facts** from the given text and put them into the latest article. Your job is to analyze the provided text and complete the article based on the user query.
 
 **User Query**: 
 "${this.userQuery}"
@@ -190,18 +190,18 @@ ${Object.entries( metadata ).map( ( [key, value] ) => { return `${key}: ${value 
 ${content}
 </text>
 
-**Current Synthesis**:
-<synthesis>
+**Current article**:
+<article>
 ${this.currentOutput}
-</synthesis>
+</article>
 
 **Task Instructions**:
 - **Only use exact phrases from the text.**.
-- **Integrate quotes smoothly** to the current synthesis to form a complete coherent article.
+- **Integrate quotes smoothly** to the current article to form a complete coherent article.
 - **Do not add your own words.**.
 - Your response must be fully enclosed in:
 <output>
-the updated synthesis here
+the updated article here
 </output>
 `;
 	}
@@ -216,11 +216,11 @@ the updated synthesis here
 				/<output>([\s\S]*?)<\/output>/,
 				/<output>([\s\S]*?)\[\/output\]/,
 				/\[output\]([\s\S]*?)\[\/output\]/,
-				/<synthesis>([\s\S]*?)<\/synthesis>/,
-				/<synthesis>([\s\S]*?)\[\/synthesis\]/,
-				/\[synthesis\]([\s\S]*?)\[\/synthesis\]/,
-				/<output>\n([\s\S]*?)<\/synthesis>/,
-				/<output>\n([\s\S]*?)\[\/synthesis\]/,
+				/<article>([\s\S]*?)<\/article>/,
+				/<article>([\s\S]*?)\[\/article\]/,
+				/\[article\]([\s\S]*?)\[\/article\]/,
+				/<output>\n([\s\S]*?)<\/article>/,
+				/<output>\n([\s\S]*?)\[\/article\]/,
 			];
 
 			for ( const regex of outputRegexes )
@@ -241,7 +241,7 @@ the updated synthesis here
 		}
 		if ( output === response.trim() )
 		{
-			console.warn( "Warning: No output or synthesis tags found in response. Using full response." );
+			console.warn( "Warning: No output or article tags found in response. Using full response." );
 		}
 		return output;
 	}
