@@ -1,0 +1,2 @@
+# Deep Truth
+{"text":"The heartbreaking story of Palestine and the heart-rending sorrow of the innocence of this patient, enduring and resilient nation, truly hurt every human being who is freedom-loving and justice-seeking. [Feb. 21, 2017]\n\nClick on the image to view the large size","metadata":{"articleTitle":"The heartbreaking story of Palestine","pageTitle":"The heartbreaking story of Palestine - Khamenei.ir","dateScrapedDate":"2025-03-06T19:49:33.336Z"}}
