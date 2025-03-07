@@ -27,7 +27,7 @@ void async function main ()
 	const deepTruth = new DeepTruth({
 		userQuery,
 		outputDir: "./outputs",
-		// modelProvider: "gemini"
+		modelProvider: "gemini"
 	});
 	const result = await deepTruth.processArticles( khameneiIr );
 

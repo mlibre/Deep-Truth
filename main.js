@@ -136,41 +136,55 @@ module.exports = class DeepTruth
 
 	async getModelResponse ( prompt )
 	{
-		try
+		const maxRetries = 3; // Set the maximum number of retries
+		let retries = 0;
+		let aiResponse = "";
+
+		while ( retries < maxRetries )
 		{
-			let aiResponse = "";
-
-			if ( this.modelProvider === "ollama" )
+			try
 			{
-				const response = await this.ollama.generate({
-					...this.ollamaOptions,
-					prompt
-				});
-
-				for await ( const part of response )
+				if ( this.modelProvider === "ollama" )
 				{
-					console.log( part.response );
-					aiResponse += part.response;
+					const response = await this.ollama.generate({
+						...this.ollamaOptions,
+						prompt
+					});
+
+					for await ( const part of response )
+					{
+						console.log( part.response );
+						aiResponse += part.response;
+					}
+				}
+				else if ( this.modelProvider === "gemini" )
+				{
+					const result = await this.model.generateContentStream( prompt );
+
+					for await ( const chunk of result.stream )
+					{
+						const chunkText = chunk.text();
+						console.log( chunkText );
+						aiResponse += chunkText;
+					}
+				}
+
+				return aiResponse.trim(); // Return the successful response
+			}
+			catch ( error )
+			{
+				retries++;
+				console.error( `Error getting model response (attempt ${retries}/${maxRetries}):`, error );
+				if ( retries < maxRetries )
+				{
+					console.log( "Retrying in 2 seconds..." );
+					await new Promise( resolve => { return setTimeout( resolve, 2000 ) }); // Wait 2 seconds before retrying
+				}
+				else
+				{
+					throw error; // Re-throw the error after max retries
 				}
 			}
-			else if ( this.modelProvider === "gemini" )
-			{
-				const result = await this.model.generateContentStream( prompt );
-
-				for await ( const chunk of result.stream )
-				{
-					const chunkText = chunk.text();
-					console.log( chunkText );
-					aiResponse += chunkText;
-				}
-			}
-
-			return aiResponse.trim();
-		}
-		catch ( error )
-		{
-			console.error( "Error getting model response:", error );
-			throw error;
 		}
 	}
 
