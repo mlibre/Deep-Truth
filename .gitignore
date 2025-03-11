@@ -1,0 +1,8 @@
+secrets.json
+tmp/
+package-lock.json
+.ignore
+**/node_modules
+dataset
+outputs/
+.env

@@ -1,0 +1,28 @@
+{
+  "name": "deep-truth",
+  "version": "1.1.3",
+  "main": "main.js",
+  "scripts": {
+    "start": "node main.js",
+    "test": "node --env-file=.env tests/example.js"
+  },
+  "keywords": [
+    "ai",
+    "deep-research",
+    "deep search",
+    "truth seeker",
+    "knowledge seeker",
+    "deep-knowledge",
+    "knowledge explorer"
+  ],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@google/generative-ai": "^0.24.0",
+    "clean-web-scraper": "^4.2.1",
+    "dotenv": "^16.4.7",
+    "eslint": "^9.21.0",
+    "ollama": "^0.5.14"
+  }
+}
