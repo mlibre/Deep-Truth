@@ -69,16 +69,14 @@ module.exports = class DeepTruth
 
 			this.totalArticles = articles.length;
 			this.processedArticles = 0;
-			const processedUrls = [];
 
 			console.log( `Starting Deep Truth analysis on ${this.totalArticles} articles for query: "${this.userQuery}"...` );
 
 			for ( const article of articles )
 			{
 				const { prompt, response } = await this.processArticle( article );
-				this.allOutputs[this.processedArticles] = response;
+				this.allOutputs[this.processedArticles] = { response, url: article.metadata.url };
 				this.processedArticles++;
-				processedUrls.push( article.metadata.url ); // Add the URL of the processed article
 				const outputFilePath = path.join( this.outputDir, `${this.processedArticles}.json` );
 				const outputData = {
 					userQuery: this.userQuery,
@@ -88,8 +86,7 @@ module.exports = class DeepTruth
 						title: article.metadata.articleTitle,
 						url: article.metadata.url
 					},
-					prompt,
-					processedUrls
+					prompt
 				};
 				fs.writeFileSync( outputFilePath, JSON.stringify( outputData, null, 2 ) );
 				fs.writeFileSync( path.join( this.outputDir, "current.json" ), JSON.stringify( this.allOutputs, null, 2 ) );

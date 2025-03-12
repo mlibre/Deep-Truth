@@ -134,34 +134,37 @@ DeepTruth generates JSON files in the specified `outputDir` (defaults to `./outp
     "url": "https://example.com/article1"
   },
   "prompt": "The full prompt sent to the AI model would be here...",
-  "processedUrls": [
-    "https://example.com/article1"
-  ]
 }
 ```
 
-* **Current State File:** A file named `current.json` is updated after each article is processed. This file contains the same data as the individual article files but always reflects the latest processed article. This is useful for monitoring progress.  For example, after processing two articles, `current.json` might look like this:
+* **Current State File:** A file named `current.json` is updated after each article is processed. This file contains the same data as the individual article files but always reflects the latest processed articles. This is useful for monitoring progress.  
+For example, after processing two articles, `current.json` might look like this:
 
 ```json:./outputs/current.json
 {
-  "1": [
-     {
-       "paragraph": "Israel often claims that Palestinians left their homes voluntarily in 1948. However, extensive historical evidence, including eyewitness accounts and documented Israeli military actions, points to forced expulsion and displacement of Palestinians during the Nakba."
-     },
-     {
-       "paragraph": "Another common narrative is that the land was 'empty' before the creation of Israel. This ignores the long-standing Palestinian presence and agricultural communities that thrived in the region for centuries."
-     }
-   ],
-  "2": [
-    {
-      "paragraph": "The claim that Palestine was a 'land without a people for a people without a land' is a historical fabrication.  Palestine had a vibrant and diverse population long before the Zionist movement."
-    },
-    {
-      "paragraph": "The lie of 'self-defense' is used to justify Israeli crimes and maintain the brutal occupation of Palestine."
-    }
-  ]
+  "0": {
+    "response": [
+      {
+        "paragraph": "This is the first extracted paragraph relating to the query from article 1."
+      },
+      {
+        "paragraph": "This is the second extracted paragraph relating to the query from article 1."
+      }
+    ],
+    "url": "https://example.com/article1"
+  },
+  "1": {
+    "response": [
+      {
+        "paragraph": "This is the first extracted paragraph relating to the query from article 2."
+      },
+      {
+        "paragraph": "This is the second extracted paragraph relating to the query from article 2."
+      }
+    ],
+    "url": "https://example.com/article2"
+  }
 }
-
 ```
 
 ## How It Works

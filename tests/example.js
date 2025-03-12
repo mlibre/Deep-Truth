@@ -3,7 +3,7 @@ const DeepTruth = require( "../main" );
 const dotenv = require( "dotenv" );
 dotenv.config();
 
-const data = fs.readFileSync( "./dataset/khamenei-ir-free-palestine-tag/train_with_metadata.json", "utf8" );
+const data = fs.readFileSync( "./dataset/khamenei-ir-free-palestine-tag/train_with_metadata.jsonl", "utf8" );
 const khameneiIr = data
 .split( "\n" )
 .filter( line => { return line.trim().length > 0 })
