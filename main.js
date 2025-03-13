@@ -21,12 +21,11 @@ module.exports = class DeepTruth
 			model: "gemini-2.0-flash",
 			apiKey: process.env.GOOGLE_API_KEY
 		},
-		outputDir = "./outputs"
+		outputDir = "./outputs",
+		continueFromArticle = true,
 	})
 	{
 	   this.modelProvider = modelProvider;
-
-		        // Initialize Ollama if selected
 		if ( modelProvider === "ollama" )
 		{
 			this.ollama = new Ollama({ host: ollamaHost })
@@ -45,17 +44,13 @@ module.exports = class DeepTruth
 		this.processedArticles = 0;
 		this.totalArticles = 0;
 		this.outputDir = outputDir; // Store output directory
-
+		this.continueFromArticle = continueFromArticle;
 		if ( !userQuery || typeof userQuery !== "string" || userQuery.trim() === "" )
 		{
 			throw new Error( "A valid user query or topic is required" );
 		}
 
-		if ( fs.existsSync( this.outputDir ) )
-		{
-			fs.rmSync( this.outputDir, { recursive: true });
-		}
-		fs.mkdirSync( this.outputDir, { recursive: true });
+		this.createOutputDirectory( );
 	}
 
 	async processArticles ( articles )
@@ -67,16 +62,17 @@ module.exports = class DeepTruth
 				throw new Error( "Input must be a non-empty array of article objects" );
 			}
 
+			let startIndex = this.lastArticleSaved( );
 			this.totalArticles = articles.length;
-			this.processedArticles = 0;
+			this.processedArticles = startIndex;
 
-			console.log( `Starting Deep Truth analysis on ${this.totalArticles} articles for query: "${this.userQuery}"...` );
+			console.log( `Continuing Deep Truth analysis from article ${startIndex + 1} of ${this.totalArticles} for query: "${this.userQuery}"...` );
 
-			for ( const article of articles )
+			for ( let i = startIndex; i < articles.length; i++ )
 			{
+				const article = articles[i];
 				const { prompt, response } = await this.processArticle( article );
-				this.allOutputs[this.processedArticles] = { response, url: article.metadata.url };
-				this.processedArticles++;
+
 				const outputFilePath = path.join( this.outputDir, `${this.processedArticles}.json` );
 				const outputData = {
 					userQuery: this.userQuery,
@@ -89,7 +85,12 @@ module.exports = class DeepTruth
 					prompt
 				};
 				fs.writeFileSync( outputFilePath, JSON.stringify( outputData, null, 2 ) );
-				fs.writeFileSync( path.join( this.outputDir, "current.json" ), JSON.stringify( this.allOutputs, null, 2 ) );
+				if ( response.length > 0 )
+				{
+					this.allOutputs[this.processedArticles] = { response, url: article.metadata.url };
+					fs.writeFileSync( path.join( this.outputDir, "current.json" ), JSON.stringify( this.allOutputs, null, 2 ) );
+				}
+				this.processedArticles++;
 				console.log( `Processed ${this.processedArticles}/${this.totalArticles} articles` );
 			}
 
@@ -103,29 +104,35 @@ module.exports = class DeepTruth
 		}
 	}
 
+	lastArticleSaved ( )
+	{
+		const currentOutputPath = path.join( this.outputDir, "current.json" );
+		if ( fs.existsSync( currentOutputPath ) )
+		{
+			this.allOutputs = JSON.parse( fs.readFileSync( currentOutputPath, "utf8" ) );
+			const startIndex = Object.keys( this.allOutputs ).length;
+			return startIndex;
+		}
+		return 0;
+	}
+
 	async processArticle ( article )
 	{
-		try
+		const { text, metadata } = article;
+
+		if ( !text || typeof text !== "string" )
 		{
-			const { text, metadata } = article;
-
-			if ( !text || typeof text !== "string" )
-			{
-				console.warn( `Skipping article with missing or invalid content: ${title || "Untitled"}` );
-				return;
-			}
-
-			const prompt = this.buildPrompt( metadata, text );
-
-			const response = await this.getModelResponse( prompt );
-			console.log( "response:", response );
-			const extractedOutput = this.extractOutputFromResponse( response );
-			return { prompt, response: extractedOutput }
+			console.warn( `Skipping article with missing or invalid content: ${title || "Untitled"}` );
+			return;
 		}
-		catch ( error )
-		{
-			console.error( `Error processing article: ${error.message}` );
-		}
+
+		const prompt = this.buildPrompt( metadata, text );
+
+		const response = await this.getModelResponse( prompt );
+		console.log( "response:", response );
+		const extractedOutput = this.extractOutputFromResponse( response );
+		return { prompt, response: extractedOutput }
+
 	}
 
 	buildPrompt ( metadata, content )
@@ -160,6 +167,26 @@ ${content}
 ]
 \`\`\`
 `;
+	}
+
+	createOutputDirectory ( )
+	{
+		if ( this.continueFromArticle == false )
+		{
+			if ( fs.existsSync( this.outputDir ) )
+			{
+				fs.rmSync( this.outputDir, { recursive: true });
+			}
+			fs.mkdirSync( this.outputDir, { recursive: true });
+		}
+
+		else
+		{
+			if ( !fs.existsSync( this.outputDir ) )
+			{
+				fs.mkdirSync( this.outputDir, { recursive: true });
+			}
+		}
 	}
 
 	extractOutputFromResponse ( response )
