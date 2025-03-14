@@ -90,28 +90,42 @@ module.exports = class DeepTruth
 			}
 
 			console.log( "Deep Truth analysis complete!" );
-			await this.generateCurrentJson();
+			this.generateCurrentJson();
 			return this.allOutputs;
 		}
 		catch ( error )
 		{
 			console.error( "Error in Deep Truth analysis:", error );
+			this.generateCurrentJson();
 			throw error;
 		}
 	}
 
-	async generateCurrentJson ( )
+	generateCurrentJson ()
 	{
 		this.allOutputs = {};
-		for ( let i = 0; i < this.processedArticles; i++ )
+		const files = fs.readdirSync( this.outputDir )
+		.filter( file => { return file.endsWith( ".json" ) && file !== "current.json" })
+		.sort( ( a, b ) =>
 		{
-			const outputFilePath = path.join( this.outputDir, `${i}.json` );
+			const numA = parseInt( a.split( "." )[0] );
+			const numB = parseInt( b.split( "." )[0] );
+			return numA - numB;
+		});
+
+		for ( let i = 0; i < files.length; i++ )
+		{
+			const outputFilePath = path.join( this.outputDir, files[i] );
 			if ( fs.existsSync( outputFilePath ) )
 			{
 				const outputData = JSON.parse( fs.readFileSync( outputFilePath, "utf8" ) );
 				if ( outputData.response && outputData.response.length > 0 )
 				{
-					this.allOutputs[i] = { response: outputData.response, url: outputData.processedArticle.url };
+					const fileIndex = parseInt( files[i].split( "." )[0] );
+					this.allOutputs[fileIndex] = {
+						response: outputData.response,
+						url: outputData.processedArticle.url
+					};
 				}
 			}
 		}
@@ -120,14 +134,19 @@ module.exports = class DeepTruth
 
 	lastArticleSaved ( )
 	{
-		const currentOutputPath = path.join( this.outputDir, "current.json" );
-		if ( fs.existsSync( currentOutputPath ) )
+		let count = 0;
+		if ( fs.existsSync( this.outputDir ) )
 		{
-			this.allOutputs = JSON.parse( fs.readFileSync( currentOutputPath, "utf8" ) );
-			const startIndex = Object.keys( this.allOutputs ).length;
-			return startIndex;
+			const files = fs.readdirSync( this.outputDir );
+			for ( const file of files )
+			{
+				if ( file.endsWith( ".json" ) && file !== "current.json" )
+				{
+					count++;
+				}
+			}
 		}
-		return 0;
+		return count;
 	}
 
 	async processArticle ( article )
