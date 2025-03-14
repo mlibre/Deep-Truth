@@ -1,6 +1,6 @@
 {
   "name": "deep-truth",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "main": "main.js",
   "scripts": {
     "start": "node main.js",
@@ -20,7 +20,7 @@
   "description": "",
   "dependencies": {
     "@google/generative-ai": "^0.24.0",
-    "clean-web-scraper": "^4.2.1",
+    "clean-web-scraper": "^4.2.3",
     "dotenv": "^16.4.7",
     "eslint": "^9.21.0",
     "ollama": "^0.5.14"

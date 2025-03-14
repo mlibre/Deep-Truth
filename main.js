@@ -43,7 +43,7 @@ module.exports = class DeepTruth
 		this.allOutputs = {};
 		this.processedArticles = 0;
 		this.totalArticles = 0;
-		this.outputDir = outputDir; // Store output directory
+		this.outputDir = outputDir;
 		this.continueFromArticle = continueFromArticle;
 		if ( !userQuery || typeof userQuery !== "string" || userQuery.trim() === "" )
 		{
@@ -85,16 +85,12 @@ module.exports = class DeepTruth
 					prompt
 				};
 				fs.writeFileSync( outputFilePath, JSON.stringify( outputData, null, 2 ) );
-				if ( response.length > 0 )
-				{
-					this.allOutputs[this.processedArticles] = { response, url: article.metadata.url };
-					fs.writeFileSync( path.join( this.outputDir, "current.json" ), JSON.stringify( this.allOutputs, null, 2 ) );
-				}
 				this.processedArticles++;
 				console.log( `Processed ${this.processedArticles}/${this.totalArticles} articles` );
 			}
 
 			console.log( "Deep Truth analysis complete!" );
+			await this.generateCurrentJson();
 			return this.allOutputs;
 		}
 		catch ( error )
@@ -102,6 +98,24 @@ module.exports = class DeepTruth
 			console.error( "Error in Deep Truth analysis:", error );
 			throw error;
 		}
+	}
+
+	async generateCurrentJson ( )
+	{
+		this.allOutputs = {};
+		for ( let i = 0; i < this.processedArticles; i++ )
+		{
+			const outputFilePath = path.join( this.outputDir, `${i}.json` );
+			if ( fs.existsSync( outputFilePath ) )
+			{
+				const outputData = JSON.parse( fs.readFileSync( outputFilePath, "utf8" ) );
+				if ( outputData.response && outputData.response.length > 0 )
+				{
+					this.allOutputs[i] = { response: outputData.response, url: outputData.processedArticle.url };
+				}
+			}
+		}
+		fs.writeFileSync( path.join( this.outputDir, "current.json" ), JSON.stringify( this.allOutputs, null, 2 ) );
 	}
 
 	lastArticleSaved ( )
